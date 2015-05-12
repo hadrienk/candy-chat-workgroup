@@ -1,7 +1,6 @@
 module.exports = function (config) {
     config.set({
-
-        frameworks: ['mocha', 'chai', 'sinon-chai'],
+        
         browsers: ['PhantomJS'],
 
         // Karma config using:
@@ -17,10 +16,11 @@ module.exports = function (config) {
             //'karma-phantomjs-launcher'
         ],*/
         files: [
-            'src/**/*.js',
-            'test/**/*.js'
+            'plugin.js',
+            'test.coffee'
         ],
         reporters: ['spec'],
+
         preprocessors: {
             '**/*.coffee': 'coffee'
         }

@@ -33,8 +33,7 @@ describe "CandyShop", ->
 
             it 'should setup the interface'
 
-
-        it 'should send its presence'
+            it 'should send its presence' # Or?..
 
         describe '#handle()', ->
             it 'should be defined', ->

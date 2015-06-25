@@ -38,7 +38,7 @@ describe "CandyShop", ->
         describe '#handle()', ->
             it 'should be defined', ->
                 expect(Workgroup).itself.to.respondTo('handle')
-            it 'should send a success response'
+            it 'should send a "Offer Response"'
 
         describe '#acceptImmediatly()', ->
             it 'should be defined', ->
@@ -80,7 +80,6 @@ describe "CandyShop", ->
 
         describe 'Handler', ->
             it 'should be defined', ->
-                console.log Workgroup.Handler
                 expect(Workgroup.Handler).to.exist
             it 'should handle "Offer Revoke Request"'
             it 'should handle "Offer Request"'

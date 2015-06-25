@@ -179,6 +179,14 @@ CandyShop.Workgroup = (function (self, Candy, $) {
 
             if (element != null && self.offer != null) {
                 element.find(".message-pane-wrapper").prepend(Mustache.to_html(self.Template.roombar, self.offer));
+
+                // Add the invite button
+                var button = element.find(".message-pane-wrapper").prepend(Mustache.to_html(self.Template.inviteButton));
+                button.click(function() {
+                    // Display the modal
+                    
+
+                });
             }
 
             return undefined;
@@ -304,7 +312,11 @@ CandyShop.Workgroup = (function (self, Candy, $) {
         '       {{/metadata}}' +
         '   </div>' +
         '</div>',
-        roombar: '<div class="roombar"><dl>{{#metadata}}<dt>{{name}}</dt><dd>{{value}}</dd>{{/metadata}}</div>'
+        roombar: '<div class="roombar"><dl>{{#metadata}}<dt>{{name}}</dt><dd>{{value}}</dd>{{/metadata}}</div>',
+        inviteButton: '<button class="invite-users btn btn-default btn-sm">Invite Users</button>',
+        inviteModal: '<h4>Invite Users</h4><form id="invite-users-muc" data-roomjid={{roomjid}}><div class="form-group">' +
+                  '<input type="text" name="bhUsers" class="tm-input form-control" ' +
+                  'id="users-input"/></div><button class="btn btn-default" type="submit">Send Invitations</button></form>'
     };
 
     return self;

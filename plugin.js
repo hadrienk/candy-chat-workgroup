@@ -116,6 +116,32 @@ CandyShop.Workgroup = (function (self, Candy, $) {
         OfferReject: function (id) {
             "use strict";
 
+        },
+
+        /**
+         * Creates a RequestAgentStatus as described in the section
+         * 4.2.4 of the xep-0142.
+         * 
+         */
+        RequestAgentStatus: function() {
+            "use strict";
+            /**
+             * A: <iq to='support@workgroup.example.com' from='alice@example.com/work'
+             * A:     id='id1' type='get'>
+             * A:   <agent-status-request xmlns='http://jabber.org/protocol/workgroup'/>
+             * A: </iq>
+             */
+             return new Strophe.Builder(
+                'iq', {
+                    from: Candy.Core.getUser().getJid(),
+                    to: self.workgroup,
+                    type: 'get'
+                }
+            ).c('agent-status-request', {
+                    xmlns: 'http://jabber.org/protocol/workgroup'
+                }
+            );
+
         }
 
     };

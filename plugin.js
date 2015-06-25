@@ -128,21 +128,23 @@ CandyShop.Workgroup = (function (self, Candy, $) {
         self.conn = Candy.Core.getConnection();
         self.workgroup = options.workgroup;
 
-        // Add a handler that gets invoked every time a message with
-        // the namespace http://jabber.org/protocol/workgroup is received.
-        self.conn.addHandler(
-            self.requestHandler,
-            "http://jabber.org/protocol/workgroup",
-            false,
-            false,
-            false,
-            false
-        );
-
         $(Candy).on('candy:core.chat.connection', function (obj, data) {
             "use strict";
             if (Strophe.Status.CONNECTED == data.status)
                 self.setAvailability(true, 'chat', 1);
+
+            // Add a handler that gets invoked every time a message with
+            // the namespace http://jabber.org/protocol/workgroup is received.
+            self.conn.addHandler(
+                self.requestHandler,
+                "http://jabber.org/protocol/workgroup",
+                false,
+                false,
+                false,
+                false
+            );
+
+
             return true;
         });
 

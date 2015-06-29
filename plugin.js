@@ -6,8 +6,74 @@ CandyShop.Workgroup = (function (self, Candy, $) {
 
     self.conn = null;
     self.workgroup = "";
-    self.offer = null;
     self.requests = [];
+
+    /**
+     * Retrieve the request using the id
+     * @param id the id to look for
+     * @returns the request DOMXMLElement if found, null otherwise
+     */
+    self.getRequestById = function(id) {
+        for (var i = 0; i < self.requests.length; ++i) {
+            if (self.requests[i].attr("id") == id)
+                return self.requests[i];
+        }
+        return null;
+    };
+
+    /**
+     * Retrieve the request using the jid
+     *
+     * @param jid the jid to look for
+     * @returns the request DOMXMLElement if found, null otherwise
+     */
+    self.getRequestByJid = function(jid) {
+        for (var i = 0; i < self.requests.length; ++i) {
+            if (self.requests[i].attr("jid") == jid)
+                return self.requests[i];
+        }
+        return null;
+    };
+
+    /**
+     * Extract the metadata from the request
+     * @param request the DOMXMLElement of the request
+     * @returns {name: string, value: string}[] the metadata
+     * @throws Error if the request was null
+     */
+    self.getMetaDataFromRequest = function(request) {
+        if (!request)
+            throw new Error("The request was null");
+
+        var metadata = [{name:"", value:""}];
+        $(request).find("metadata value").each(function (key, value) {
+            value = $(value);
+            metadata.push({
+                name:value.attr("name"),
+                value:value.text()
+            })
+        });
+        return metadata;
+    };
+
+    /**
+     * Extract the jid from a request
+     *
+     * @param request the DOMXMLElement of the request
+     * @returns {String} the jid
+     */
+    self.getJidFromRequest = function(request) {
+        return $(request).attr("jid");
+    };
+
+    /**
+     * Extract the id from a request
+     * @param request
+     * @returns {String} the id
+     */
+    self.getIdFromRequest = function(request) {
+        return $(request).attr("jid");
+    };
 
     /**
      * Workgroup event factories.
@@ -30,7 +96,7 @@ CandyShop.Workgroup = (function (self, Candy, $) {
             var attributes = {
                 from: Candy.Core.getUser().getJid(),
                 to: self.workgroup
-            }
+            };
             if (!available) {
                 attributes.type = 'unavailable';
             }
@@ -58,10 +124,12 @@ CandyShop.Workgroup = (function (self, Candy, $) {
         /**
          * Creates an Offer Response as described in the section
          * 4.2.5 of the xep-0142.
-         * @param id the id received in the "Offer Request"
+         * @param from the jid of the agent
+         * @param workgroup the jid of the workgroup
+         * @param iqId the iq id
          * @constructor
          */
-        OfferResponse: function () {
+        OfferResponse: function (from, workgroup, iqId) {
             "use strict";
             /**
              * A: <iq to='support@workgroup.example.com'
@@ -71,10 +139,10 @@ CandyShop.Workgroup = (function (self, Candy, $) {
              */
             return new Strophe.Builder(
                 'iq', {
-                    from: Candy.Core.getUser().getJid(),
-                    to: self.workgroup,
-                    id: self.offer.element[0].parentElement.attributes.id.value, //self.offer.attributes.id.value,
-                    type: 'result'
+                    from: from,
+                    to: workgroup,
+                    type: 'result',
+                    id: iqId
                 });
         },
 
@@ -82,10 +150,12 @@ CandyShop.Workgroup = (function (self, Candy, $) {
          * Creates an Offer Accept as described in the section
          * 4.2.6 of the xep-0142.
          *
-         * @param id the id received in the "Offer Request"
+         * @param from the jid of the agent
+         * @param workgroup the jid of the work group
+         * @param requestJid the jid of the user request
          * @constructor
          */
-        OfferAccept: function () {
+        OfferAccept: function (from, workgroup, requestJid) {
             "use strict";
             /**
              * A: <iq to='support@workgroup.example.com' from='alice@example.com/work' id='id1' type='set'>
@@ -94,13 +164,12 @@ CandyShop.Workgroup = (function (self, Candy, $) {
              */
             return new Strophe.Builder(
                 'iq', {
-                    from: Candy.Core.getUser().getJid(),
-                    to: self.workgroup,
-                    id: self.offer.element[0].attributes.id.value,
+                    from: from,
+                    to: workgroup,
                     type: 'set'
                 }
             ).c('offer-accept', {
-                    jid: self.offer.element[0].attributes.jid.value,
+                    jid: requestJid,
                     xmlns: 'http://jabber.org/protocol/workgroup'
                 }
             );
@@ -110,11 +179,25 @@ CandyShop.Workgroup = (function (self, Candy, $) {
          * Creates an Offer Reject as described in the section
          * 4.2.6 of the xep-0142.
          *
-         * @param id the id received in the "Offer Request"
+         * @param from the jid of the agent
+         * @param workgroup the jid of the work group
+         * @param requestJid the jid of the user request
          * @constructor
          */
-        OfferReject: function (id) {
+        OfferReject: function (from, workgroup, requestJid) {
             "use strict";
+
+            return new Strophe.Builder(
+                'iq', {
+                    from: from,
+                    to: workgroup,
+                    type: 'set'
+                }
+            ).c('offer-reject', {
+                    jid: requestJid,
+                    xmlns: 'http://jabber.org/protocol/workgroup'
+                }
+            );
 
         },
 
@@ -167,7 +250,7 @@ CandyShop.Workgroup = (function (self, Candy, $) {
                 false,
                 false,
                 false,
-                false
+                self.workgroup
             );
 
 
@@ -175,18 +258,50 @@ CandyShop.Workgroup = (function (self, Candy, $) {
         });
 
         $(Candy).on('candy:view.room.after-add', function (event, data) {
-            var element = data.element, roomJid = data.roomJid, type = data.type;
 
-            if (element != null && self.offer != null) {
-                element.find(".message-pane-wrapper").prepend(Mustache.to_html(self.Template.roombar, self.offer));
+            try {
+                var element = $(data.element), roomJid = data.roomJid;
 
-                // Add the invite button
-                var button = element.find(".message-pane-wrapper").prepend(Mustache.to_html(self.Template.inviteButton));
-                button.click(function() {
-                    // Display the modal
-                    
+                // TODO: Fix this hack. It relies on the openfire implementation.
+                // TODO: The correct way to get the request would be to use the offer
+                // TODO: element f the invite as stated in the section 4.2.8 of the
+                // TODO: xep-0142
+                var request = self.getRequestById(Strophe.getNodeFromJid(data.roomJid));
 
-                });
+                if (element != null && request != null) {
+                    var metadata = self.getMetaDataFromRequest(request);
+                    element.find(".message-pane-wrapper").prepend(Mustache.to_html(self.Template.roombar, {metadata:metadata}));
+
+                    // Add the invite button
+                    var button = element.find(".message-pane-wrapper").prepend(Mustache.to_html(self.Template.inviteButton));
+                    button.click(function() {
+                        // Show a loading modal
+                        Candy.View.Pane.Chat.Modal.show("", false, true);
+                        try {
+                            // Get the list of users
+                            self.conn.sendIQ(
+                                self.Events.RequestAgentStatus(),
+                                function(e) {
+                                    agentList = Mustache.to_html(self.Template.agentList, e);
+                                    Candy.View.Pane.Chat.Modal.show(e, true, false);
+                                },
+                                function(e) {
+                                    Candy.View.Pane.Chat.Modal.showError(e);
+                                }
+                            );
+                            // Display the modal
+                            var modal = $(Mustache.to_html(self.Template.inviteModal, {roomJid: roomJid}));
+                            Candy.View.Pane.Chat.Modal.show(modal, false, true);
+                        } catch (e) {
+                            console.log(e);
+                            Candy.View.Pane.Chat.Modal.hide();
+                        }
+
+
+                    });
+                }
+            } catch (error) {
+                console.log(error);
             }
 
             return undefined;
@@ -207,21 +322,36 @@ CandyShop.Workgroup = (function (self, Candy, $) {
         self.conn.send(self.Events.Presence(available, show, maxChats));
     };
 
-    self.showModal = function () {
+    /**
+     * Show the request modal
+     *
+     * @param requestJid the jid of the request.
+     */
+    self.showModal = function (requestJid) {
 
-        modal = $(Mustache.to_html(self.Template.modalForm, self.offer));
-        acceptButton = $(Mustache.to_html(self.Template.acceptButton, self.offer));
-        rejectButton = $(Mustache.to_html(self.Template.rejectButton, self.offer));
+        var metadata = self.getMetaDataFromRequest(
+            self.getRequestByJid(requestJid)
+        );
+
+        modal = $(Mustache.to_html(self.Template.modalForm, {metadata: metadata}));
+        acceptButton = $(Mustache.to_html(self.Template.acceptButton));
+        rejectButton = $(Mustache.to_html(self.Template.rejectButton));
         /*handleButton = Mustache.to_html(self.Template.handleButton, self.offer);*/
 
         $(acceptButton).click(function() {
-            self.acceptImmediately();
-            Candy.View.Pane.Chat.Modal.hide();
+            self.accept(
+                Candy.Core.getUser().getJid(),
+                self.workgroup,
+                requestJid
+            );
         });
 
         $(rejectButton).click(function() {
-           self.rejectImmediately()
-            Candy.View.Pane.Chat.Modal.hide();
+            self.reject(
+                Candy.Core.getUser().getJid(),
+                self.workgroup,
+                requestJid
+            );
         });
 
         /*$(handleButton).click(function() {
@@ -233,67 +363,92 @@ CandyShop.Workgroup = (function (self, Candy, $) {
         Candy.View.Pane.Chat.Modal.show($(modal), false, true);
     };
 
-    self.accept = function () {
+    self.accept = function (agentJid, workgroup, requestId) {
         "use strict";
-        self.conn.send(self.Events.OfferAccept());
+        var msg = self.Events.OfferAccept(
+            agentJid,
+            workgroup,
+            requestId
+        );
+
+        self.conn.sendIQ(
+            msg,
+            Candy.View.Pane.Chat.Modal.hide,
+            Candy.View.Pane.Chat.Modal.showError
+        );
+
     };
-    self.reject = function () {
+    self.reject = function (agentJid, workgroup, requestId) {
+
+        "use strict";
+        var msg = self.Events.OfferReject(
+            agentJid,
+            workgroup,
+            requestId
+        );
+
+        self.conn.sendIQ(
+            msg,
+            Candy.View.Pane.Chat.Modal.hide,
+            Candy.View.Pane.Chat.Modal.showError
+        );
+
+
     };
     self.handle = function () {
     };
-    self.rejectImmediately = function () {
-        "use strict";
-    };
-    self.acceptImmediately = function () {
-        "use strict";
-        self.conn.send(self.Events.OfferResponse());
-        self.conn.flush();
-        self.conn.send(self.Events.OfferAccept());
-        self.conn.flush();
-    };
+
     self.requestHandler = function (message) {
         "use strict";
-        message = $(message);
-        var element = message.children().first();
-        switch (element[0].nodeName) {
-            case "offer":
-                if (element.parent()[0].nodeName == "message")
-                    break; // Ignore the invites.
 
-                var jid, metadata = [], timeout;
-                jid = element.attr("jid");
-                element.find("metadata value").each(function (key, value) {
-                    value = $(value);
-                    metadata.push({
-                        name:value.attr("name"),
-                        value:value.text()
-                    })
-                });
-                //timeout = element.find("timeout")[0].text();
-                self.offer = {
-                    jid: jid,
-                    timeout: timeout,
-                    metadata: metadata,
-                    element: element
-                };
+        // Wrapped into a try to avoid handler
+        // de-registration
+        try {
+            message = $(message);
 
-                self.showModal();
+            // Extract the iq information
+            var iqId, rootName = message.prop("tagName");
+            if (rootName == "iq") {
+                iqId = message.attr("id");
+            }
 
-                break;
-            case "notify-agents":
-                self.notifyAgents = $(element);
-                break;
-            case "notify-queue":
-                self.notifyQueue = $(element);
-                break;
-            case "notify-queue-details":
-                self.notifyQueueDetails = $(element);
-                break;
-            case "offer-revoke":
-                Candy.View.Pane.Chat.Modal.hide();
-                self.offer = null;
-                break;
+            var element = message.children().first();
+            switch (element.prop("tagName")) {
+                case "offer":
+                    if (rootName == "message")
+                        break; // Ignore the invites.
 
+                    var jid = element.attr("jid");
+                    self.requests.push(element);
+
+                    // Send the iq answer immediately.
+                    self.conn.send(self.Events.OfferResponse(
+                        Candy.Core.getUser().getJid(),
+                        self.workgroup,
+                        iqId
+                    ));
+                    self.conn.flush();
+
+                    self.showModal(jid);
+
+                    break;
+                case "notify-agents":
+                    self.notifyAgents = $(element);
+                    break;
+                case "notify-queue":
+                    self.notifyQueue = $(element);
+                    break;
+                case "notify-queue-details":
+                    self.notifyQueueDetails = $(element);
+                    break;
+                case "offer-revoke":
+                    Candy.View.Pane.Chat.Modal.hide();
+                    self.offer = null;
+                    break;
+
+            }
+        } catch (error) {
+            console.log(error)
         }
         return true;
     };
@@ -306,10 +461,12 @@ CandyShop.Workgroup = (function (self, Candy, $) {
         '<div>' +
         '   <h4>New incoming request</h4>' +
         '   <div>' +
+        '       <dl>' +
         '       {{#metadata}}' +
-        '       <span class="name">{{ name }}:</span>' +
-        '       <span class="value">{{ value }}</span>' +
+        '       <dt class="name">{{ name }}:</dt>' +
+        '       <dd class="value">{{ value }}</dd>' +
         '       {{/metadata}}' +
+        '       </dl>' +
         '   </div>' +
         '</div>',
         roombar: '<div class="roombar"><dl>{{#metadata}}<dt>{{name}}</dt><dd>{{value}}</dd>{{/metadata}}</div>',

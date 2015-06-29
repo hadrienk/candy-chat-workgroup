@@ -40,18 +40,6 @@ describe "CandyShop", ->
                 expect(Workgroup).itself.to.respondTo('handle')
             it 'should send a "Offer Response"'
 
-        describe '#acceptImmediatly()', ->
-            it 'should be defined', ->
-                expect(Workgroup).itself.to.respondTo('acceptImmediatly')
-            it 'should send a "Offer Response"'
-            it 'should send a "Offer Accept Request"'
-
-        describe '#rejectImmediatly()', ->
-            it 'should be defined', ->
-                expect(Workgroup).itself.to.respondTo('rejectImmediatly')
-            it 'should send a "Offer Response"'
-            it 'should send a "Offer Reject Request"'
-
         describe '#reject()', ->
             it 'should be defined', ->
                 expect(Workgroup).itself.to.respondTo('reject')

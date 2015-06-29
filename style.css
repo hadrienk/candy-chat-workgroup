@@ -1,12 +1,19 @@
 div.message-pane-wrapper > div > dl {
-  margin: 1em 0;
-  padding: 0;
+  margin: 1em 0 1em 20px;
+  padding: 10px 10px 10px 0;
   float: left;
+
+  -webkit-border-radius: 10px;
+  -moz-border-radius: 10px;
+  border-radius: 10px;
+
+  background-color: white;
 }
 
-div.message-pane-wrapper > div > dl > dd:nth-child(2) {
-  border:none;
+div.message-pane-wrapper ul.message-pane {
+  clear: left;
 }
+
 div.message-pane-wrapper > div > dl > dt {
   clear: left;
   float: left;
@@ -22,7 +29,6 @@ div.message-pane-wrapper > div > dl > dt:after {
 
 
 div.message-pane-wrapper > div > dl > dd {
-  border-top: 1px solid #999;
   margin: 0 0 0 110px;
   padding: 5px 5px 0.5em 5px;
 }

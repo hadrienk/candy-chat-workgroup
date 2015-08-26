@@ -8,6 +8,20 @@ CandyShop.Workgroup = (function (self, Candy, $) {
     self.workgroup = "";
     self.requests = [];
 
+    // Redefine the play sound function so that we can set the file to play.
+    self.playSound =function(file) {
+        file = file || 'notify.mp3';
+        try {
+            if(Candy.View.Pane.Chat.Toolbar._supportsNativeAudio) {
+                new Audio(Candy.View.getOptions().assets + file).play();
+            } else {
+                var chatSoundPlayer = document.getElementById('chat-sound-player');
+                chatSoundPlayer.SetVariable('method:stop', '');
+                chatSoundPlayer.SetVariable('method:play', '');
+            }
+        } catch (e) {}
+    };
+
     /**
      * Retrieve the request using the id
      * @param id the id to look for
@@ -48,10 +62,14 @@ CandyShop.Workgroup = (function (self, Candy, $) {
         var metadata = [{name:"", value:""}];
         $(request).find("metadata value").each(function (key, value) {
             value = $(value);
-            metadata.push({
-                name:value.attr("name"),
-                value:value.text()
-            })
+
+            if ($.inArray(key, hiddenProperties) < 0) {
+                metadata.push({
+                    name:value.attr("name"),
+                    value:value.text()
+                });
+            }
+
         });
         return metadata;
     };
@@ -237,6 +255,8 @@ CandyShop.Workgroup = (function (self, Candy, $) {
         self.conn = Candy.Core.getConnection();
         self.workgroup = options.workgroup;
 
+        self.hiddenProperties = ["workgroup","referer","userID","username"];
+
         $(Candy).on('candy:core.chat.connection', function (obj, data) {
             "use strict";
             if (Strophe.Status.CONNECTED == data.status)
@@ -332,6 +352,8 @@ CandyShop.Workgroup = (function (self, Candy, $) {
         var metadata = self.getMetaDataFromRequest(
             self.getRequestByJid(requestJid)
         );
+
+        self.playSound('alert.mp3');
 
         modal = $(Mustache.to_html(self.Template.modalForm, {metadata: metadata}));
         acceptButton = $(Mustache.to_html(self.Template.acceptButton));

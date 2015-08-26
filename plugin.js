@@ -481,8 +481,8 @@ CandyShop.Workgroup = (function (self, Candy, $) {
         modalForm: '' +
         '<div>' +
         '   <h4>New incoming request</h4>' +
-        '   <div>' +
-        '       <dl>' +
+        '   <div id="workgroup-metadata">' +
+        '       <dl class="{{ name }}">' +
         '       {{#metadata}}' +
         '       <dt class="name">{{ name }}:</dt>' +
         '       <dd class="value">{{ value }}</dd>' +
@@ -490,7 +490,7 @@ CandyShop.Workgroup = (function (self, Candy, $) {
         '       </dl>' +
         '   </div>' +
         '</div>',
-        roombar: '<div class="roombar"><dl>{{#metadata}}<dt>{{name}}</dt><dd>{{value}}</dd>{{/metadata}}</div>',
+        roombar: '<div id="workgroup-metadata"><dl>{{#metadata}}<dt>{{name}}</dt><dd>{{value}}</dd>{{/metadata}}</div>',
         inviteButton: '<button class="invite-users btn btn-default btn-sm">Invite Users</button>',
         inviteModal: '<h4>Invite Users</h4><form id="invite-users-muc" data-roomjid={{roomjid}}><div class="form-group">' +
                   '<input type="text" name="bhUsers" class="tm-input form-control" ' +

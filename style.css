@@ -1,4 +1,4 @@
-div.message-pane-wrapper > div > dl {
+div#workgroup-metadata dl {
   margin: 1em 0 1em 20px;
   padding: 10px 10px 10px 0;
   float: left;
@@ -10,11 +10,7 @@ div.message-pane-wrapper > div > dl {
   background-color: white;
 }
 
-div.message-pane-wrapper ul.message-pane {
-  clear: left;
-}
-
-div.message-pane-wrapper > div > dl > dt {
+div#workgroup-metadata dl > dt {
   clear: left;
   float: left;
   width: 100px;
@@ -23,12 +19,15 @@ div.message-pane-wrapper > div > dl > dt {
   padding: 5px;
   font-weight: bold;
 }
-div.message-pane-wrapper > div > dl > dt:after {
+div#workgroup-metadata  dl > dt:after {
   content: ":";
 }
 
-
-div.message-pane-wrapper > div > dl > dd {
+div#workgroup-metadata  dl > dd {
   margin: 0 0 0 110px;
   padding: 5px 5px 0.5em 5px;
+}
+
+div.message-pane-wrapper ul.message-pane {
+  clear: left;
 }

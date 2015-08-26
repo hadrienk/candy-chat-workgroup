@@ -50,28 +50,23 @@ CandyShop.Workgroup = (function (self, Candy, $) {
     };
 
     /**
+     * TODO: REMOVE!
      * Extract the metadata from the request
      * @param request the DOMXMLElement of the request
      * @returns {name: string, value: string}[] the metadata
      * @throws Error if the request was null
      */
     self.getMetaDataFromRequest = function(request) {
-        if (!request)
-            throw new Error("The request was null");
 
-        var metadata = [{name:"", value:""}];
-        $(request).find("metadata value").each(function (key, value) {
-            value = $(value);
+        try {
+            metadata = self.metadataCallback(request);
+        } catch (e) {
+            console.log("The metadata callback threw an error", e);
+            metadata = e;
+        }
 
-            if ($.inArray(key, hiddenProperties) < 0) {
-                metadata.push({
-                    name:value.attr("name"),
-                    value:value.text()
-                });
-            }
-
-        });
         return metadata;
+
     };
 
     /**
@@ -248,14 +243,18 @@ CandyShop.Workgroup = (function (self, Candy, $) {
     };
 
     self.init = function (options) {
+
         if (typeof options == 'undefined') {
             throw "No workgroup defined"
         }
 
         self.conn = Candy.Core.getConnection();
+
+        // The workgroup to connect to
         self.workgroup = options.workgroup;
 
-        self.hiddenProperties = ["workgroup","referer","userID","username"];
+        // Callback to process the metadata
+        self.metadataCallback = options.metadata || function(a) { return a;};
 
         $(Candy).on('candy:core.chat.connection', function (obj, data) {
             "use strict";

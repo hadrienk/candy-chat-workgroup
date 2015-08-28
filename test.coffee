@@ -5,6 +5,8 @@ describe "CandyShop", ->
 
     describe "#Workgroup()", ->
         Workgroup = null
+        Candy = null
+        #jQuerySpy = sinon.spy(jQuery.prototype)
 
         Strophe =
             Connection:
@@ -18,7 +20,7 @@ describe "CandyShop", ->
             jQuery = {};
 
             Workgroup = CandyShop.Workgroup(
-                CandyShop.Workgroup || {}, Candy, jQuery
+                {}, Candy, jQuery
             )
 
         describe '#init()', ->
@@ -66,9 +68,65 @@ describe "CandyShop", ->
 
             it 'should display the parameters'
 
-        describe 'Handler', ->
+        describe '#getMetaDataFromRequest()', ->
             it 'should be defined', ->
-                expect(Workgroup.Handler).to.exist
-            it 'should handle "Offer Revoke Request"'
-            it 'should handle "Offer Request"'
-            it 'should handle "Agent Invite"'
+                expect(Workgroup).itself.to.respondTo('getMetaDataFromRequest')
+            it 'should throw error if no request is defined', ->
+                expect(-> Workgroup.getMetaDataFromRequest(1)).to.throw(Error)
+            it 'should call the metadata', ->
+                #console.log(jQuery('<test />'))
+                request = jQuery("")
+            #jQuery.onCall(request).returnThis().onCall("metadata value")
+
+            it 'should filter metadata'
+
+        describe 'Events', ->
+            it 'should be defined', ->
+                expect(Workgroup.Events).to.exist
+
+            beforeEach ->
+                stubJid = {
+                    getJid: sinon.stub().returns("alice@example.com/work")
+                }
+                Candy.Core.getUser = sinon.stub().returns(stubJid)
+                Workgroup.workgroup = "support@workgroup.example.com"
+
+
+            describe 'Presence', ->
+
+                it 'should create unavailable stanza', ->
+                    returnedStanza = Workgroup.Events.Presence(false, 'chat', 0).toString()
+                    expect(returnedStanza).to.equal("""\
+                        <presence from='alice@example.com/work' to='support@workgroup.example.com' type='unavailable' xmlns='jabber:client'>\
+                            <show>chat</show>\
+                            <agent-status xmlns='http://jabber.org/protocol/workgroup'/>\
+                        </presence>\
+                    """)
+
+                it 'should create available stanza', ->
+                    returnedStanza = Workgroup.Events.Presence(true, 'chat', 0).toString()
+                    expect(returnedStanza).to.equal("""\
+                        <presence from='alice@example.com/work' to='support@workgroup.example.com' xmlns='jabber:client'>\
+                            <show>chat</show>\
+                            <agent-status xmlns='http://jabber.org/protocol/workgroup'/>\
+                        </presence>\
+                    """)
+
+                it 'should create available stanza', ->
+                    returnedStanza = Workgroup.Events.Presence(true, null, 0).toString()
+                    expect(returnedStanza).to.equal("""\
+                        <presence from='alice@example.com/work' to='support@workgroup.example.com' xmlns='jabber:client'>\
+                            <agent-status xmlns='http://jabber.org/protocol/workgroup'/>\
+                        </presence>\
+                    """)
+
+                it 'should create available stanza with max chat', ->
+                    returnedStanza = Workgroup.Events.Presence(true, 'chat', 1).toString()
+                    expect(returnedStanza).to.equal("""\
+                        <presence from='alice@example.com/work' to='support@workgroup.example.com' xmlns='jabber:client'>\
+                            <show>chat</show>\
+                            <agent-status xmlns='http://jabber.org/protocol/workgroup'>\
+                                  <max-chats>1</max-chats>\
+                            </agent-status>\
+                        </presence>\
+                    """)

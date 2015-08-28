@@ -85,7 +85,7 @@ CandyShop.Workgroup = (function (self, Candy, $) {
      * @returns {String} the id
      */
     self.getIdFromRequest = function(request) {
-        return $(request).attr("jid");
+        return $(request).attr("id");
     };
 
     /**
@@ -99,9 +99,16 @@ CandyShop.Workgroup = (function (self, Candy, $) {
          * Creates a new presence message as described in the section
          * 4.2.1 of the xep-0142.
          *
-         * @param maxChats a Number the implementation MAY use to route the request
+         * The show states have a  specific meaning within the context of the workgroup protocol:
+         *
+         * chat - Indicates the agent is available to chat (is idle and ready to handle more conversations).
+         * away - The agent is busy (possibly with other chats). The agent may still be able to handle other chats but an offer rejection is likely.
+         * xa - The agent is physically away from their terminal and should not have a chat routed to them.
+         * dnd - The agent is busy and should not be disturbed. However, special case, or extreme urgency chats may still be offered to the agent although offer rejection or offer timeouts are highly likely.
+         *
          * @param available true to indicate availability
-         * @param show standard XMPP show states but interpreted differently
+         * @param show XMPP show states
+         * @param maxChats a Number the implementation MAY use to route the request
          * @constructor
          */
         Presence: function (available, show, maxChats) {
@@ -123,13 +130,15 @@ CandyShop.Workgroup = (function (self, Candy, $) {
             var presence = new Strophe.Builder(
                 'presence', attributes
             );
+            if (show) {
+                presence.c('show', {}, show);
+            }
             presence.c('agent-status', {
                     xmlns: 'http://jabber.org/protocol/workgroup'
                 }
             );
-            presence.c('max-chats', {}, maxChats);
-            if (show) {
-                presence.up().c('show', {}, show);
+            if (maxChats > 0) {
+                presence.c('max-chats', {}, maxChats);
             }
             return presence;
         },
@@ -272,7 +281,6 @@ CandyShop.Workgroup = (function (self, Candy, $) {
                 self.workgroup
             );
 
-
             return true;
         });
 
@@ -288,15 +296,19 @@ CandyShop.Workgroup = (function (self, Candy, $) {
                 var request = self.getRequestById(Strophe.getNodeFromJid(data.roomJid));
 
                 if (element != null && request != null) {
+
                     var metadata = self.getMetaDataFromRequest(request);
+
                     element.find(".message-pane-wrapper").prepend(Mustache.to_html(self.Template.roombar, {metadata:metadata}));
 
                     // Add the invite button
                     var button = element.find(".message-pane-wrapper").prepend(Mustache.to_html(self.Template.inviteButton));
                     button.click(function() {
+
                         // Show a loading modal
                         Candy.View.Pane.Chat.Modal.show("", false, true);
                         try {
+
                             // Get the list of users
                             self.conn.sendIQ(
                                 self.Events.RequestAgentStatus(),
@@ -315,7 +327,6 @@ CandyShop.Workgroup = (function (self, Candy, $) {
                             console.log(e);
                             Candy.View.Pane.Chat.Modal.hide();
                         }
-
 
                     });
                 }
